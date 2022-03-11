@@ -1,0 +1,17 @@
+SELECT
+    COUNT(DISTINCT(sq.st_id))
+FROM
+(
+SELECT
+    st_id,
+    SUM(correct) OVER(
+                    PARTITION BY st_id
+                    ORDER BY timest
+                    RANGE BETWEEN '1 hour' PRECEDING AND CURRENT ROW
+                    ) AS peas_one_hour
+FROM peas
+
+WHERE date_trunc('month', timest) = date_trunc('month', NOW())
+) AS sq
+
+WHERE peas_one_hour >= 20

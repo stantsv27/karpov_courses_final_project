@@ -1,0 +1,82 @@
+SELECT
+    purchase_users.revenue / users.users AS ARPU,
+    purchase_users.revenue / active_users.active_users AS ARPAU,
+    CAST(purchase_users.purchase_users AS float) / users.users AS CR_users_to_purchase,
+    CAST(purchase_users.purchase_users AS float) / active_users.active_users AS CR_active_users_to_purchase,
+    CAST(math_purchase_user.math_purchase_user AS float) / math_active_users.math_active_users AS CR_math_active_users_to_purchase
+FROM
+-- finding number of users by the groups
+(
+SELECT
+    test_grp,
+    COUNT(st_id) AS users
+FROM studs
+
+GROUP BY test_grp
+) AS users
+
+
+LEFT JOIN
+-- finding number of active users by the groups
+(
+SELECT
+    s.test_grp AS test_grp,
+    COUNT(DISTINCT(p.st_id)) AS active_users
+FROM peas AS p
+LEFT JOIN studs AS s 
+ON p.st_id = s.st_id
+
+GROUP BY test_grp
+) AS active_users
+ON users.test_grp = active_users.test_grp
+
+
+LEFT JOIN
+-- finding revenue and number of purchased users
+(
+SELECT
+    s.test_grp AS test_grp,
+    COUNT(DISTINCT(c.st_id)) AS purchase_users,
+    SUM(c.money) AS revenue
+FROM checks AS c
+LEFT JOIN studs AS s
+ON c.st_id = s.st_id
+
+GROUP BY test_grp
+) AS purchase_users
+ON users.test_grp = purchase_users.test_grp
+
+
+LEFT JOIN
+-- finding number of active users on discipline 'math'
+(
+SELECT
+    s.test_grp AS test_grp,
+    COUNT(DISTINCT(p.st_id)) AS math_active_users
+FROM peas AS p
+LEFT JOIN studs AS s 
+ON p.st_id = s.st_id
+
+WHERE subject = 'math'
+
+GROUP BY test_grp
+) AS math_active_users
+ON users.test_grp = math_active_users.test_grp
+
+
+LEFT JOIN
+-- finding number of purchased users on discipline 'math'
+(
+SELECT
+    s.test_grp AS test_grp,
+    COUNT(DISTINCT(c.st_id)) AS math_purchase_user
+FROM checks AS c
+LEFT JOIN studs AS s
+ON c.st_id = s.st_id
+
+WHERE subject = 'math'
+
+GROUP BY test_grp
+) AS math_purchase_user
+ON users.test_grp = math_purchase_user.test_grp
+
